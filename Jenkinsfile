@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        // Points Jenkins directly to the Docker and Kubernetes execution binaries
-        TOOL_PATH = "C:\\Program Files\\Docker\\Docker\\resources\\bin"
+        // Pointing Jenkins explicitly to your personal AppData installation location
+        TOOL_PATH = "C:\\Users\\NIVEDHA\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin"
     }
 
     parameters {
