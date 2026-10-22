@@ -2,42 +2,90 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Public Transport Monitoring Dashboard</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f9; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1, h2 { color: #333; }
-        .bus-card { border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 4px; }
-        .status-low { color: green; font-weight: bold; }
-        .status-moderate { color: orange; font-weight: bold; }
-        .status-high { color: red; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f5f7fa; color: #333; }
+        header { background: #1e3a8a; color: #fff; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
+        .alert-banner { display: none; background: #dc2626; color: white; padding: 15px; text-align: center; font-weight: bold; border-radius: 6px; margin-bottom: 20px; font-size: 1.1em; }
+        .search-box { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        input[type="text"] { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        .disruptions { background: #fff3cd; border-left: 6px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); position: relative; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .badge.low { background: #dcfce7; color: #15803d; }
+        .badge.moderate { background: #fef9c3; color: #854d0e; }
+        .badge.high { background: #fee2e2; color: #991b1b; }
+        .status { font-weight: bold; margin-top: 10px; }
+        .status.delayed { color: #dc2626; }
+        .status.ontime { color: #16a34a; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🚍 Public Transport Monitoring Dashboard</h1>
-        <h2>Current Bus Status</h2>
-        <div id="bus-list"></div>
+
+    <header>
+        <h1>Metropolitan Transport Authority Monitor</h1>
+    </header>
+
+    <!-- FAULTY ROLLOUT INDICATOR FOR TEST STEP 4 -->
+    <div id="crashBanner" class="alert-banner">🚨 CRITICAL FAULT DETECTED: SERVICE PIPELINE TERMINATED</div>
+
+    <div class="search-box">
+        <label for="filterInput"><strong>🔍 Search Route Number:</strong></label>
+        <input type="text" id="filterInput" placeholder="Type a route identifier (e.g., 42, 88)..." onkeyup="filterRoutes()">
     </div>
+
+    <div class="disruptions">
+        <h3>⚠️ Operational Advisories & Disruptions</h3>
+        <ul>
+            <li><strong>Route 101:</strong> 15-minute delay due to water main repair on Broadway Ave.</li>
+            <li><strong>Route 14:</strong> Temporary stop bypass at Central Square. Use alternative boarding at 3rd St.</li>
+        </ul>
+    </div>
+
+    <h2>Active Bus Telemetry</h2>
+    <div id="fleetGrid" class="grid"></div>
+
     <script>
         const busData = [
-            { route: "101", source: "Station A", destination: "Station B", eta: "5 mins", crowd: "Low", status: "On Time" },
-            { route: "102", source: "Station C", destination: "Station D", eta: "15 mins", crowd: "High", status: "Delayed" }
+            { route: "42", origin: "North Suburbs", destination: "Downtown Terminal", eta: "4 mins", crowd: "low", status: "On Time", stateClass: "ontime" },
+            { route: "101", origin: "East Metro Station", destination: "Airport Express", eta: "19 mins", crowd: "high", status: "Delayed (15m)", stateClass: "delayed" },
+            { route: "88", origin: "Westside Hub", destination: "Financial District", eta: "11 mins", crowd: "moderate", status: "On Time", stateClass: "ontime" },
+            { route: "14", origin: "South Port", destination: "University Campus", eta: "N/A", crowd: "low", status: "Route Diverted", stateClass: "delayed" }
         ];
-        function displayBuses(data) {
-            const list = document.getElementById('bus-list');
-            list.innerHTML = '';
-            data.forEach(bus => {
-                list.innerHTML += `
-                    <div class="bus-card">
-                        <h3>Route ${bus.route} (${bus.status})</h3>
-                        <p><strong>From:</strong> ${bus.source} | <strong>To:</strong> ${bus.destination}</p>
-                        <p><strong>ETA:</strong> ${bus.eta} | <strong>Crowd Level:</strong> <span class="status-${bus.crowd.toLowerCase()}">${bus.crowd}</span></p>
+
+        // Fault Injection Parser for Requirement 4
+        const queryParams = new URLSearchParams(window.location.search);
+        if (queryParams.get('version') === 'broken') {
+            document.getElementById('crashBanner').style.display = 'block';
+            document.getElementById('fleetGrid').innerHTML = `<p style="color:red; font-weight:bold;">Fatal Application Exception: Out of memory mapping asset nodes.</p>`;
+            throw new Error("Simulated Rollout Failure");
+        }
+
+        function displayData(items) {
+            const container = document.getElementById('fleetGrid');
+            container.innerHTML = "";
+            items.forEach(bus => {
+                container.innerHTML += `
+                    <div class="card">
+                        <h3>Route Bus ${bus.route}</h3>
+                        <p><strong>Path:</strong> ${bus.origin} ➔ ${bus.destination}</p>
+                        <p><strong>Estimated Arrival:</strong> ${bus.eta}</p>
+                        <p><strong>Crowd Density:</strong> <span class="badge ${bus.crowd}">${bus.crowd}</span></p>
+                        <div class="status ${bus.stateClass}">Status: ${bus.status}</div>
                     </div>
                 `;
             });
         }
-        displayBuses(busData);
+
+        function filterRoutes() {
+            const query = document.getElementById('filterInput').value.toLowerCase().trim();
+            const matched = busData.filter(b => b.route.toLowerCase().includes(query));
+            displayData(matched);
+        }
+
+        displayData(busData);
     </script>
 </body>
 </html>
