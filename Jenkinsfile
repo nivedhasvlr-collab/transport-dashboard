@@ -3,6 +3,8 @@ pipeline {
 
     environment {
         TOOL_PATH = "C:\\Users\\NIVEDHA\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin"
+        // Injects your user connection context file explicitly into the Jenkins runner task workspace
+        KUBECONFIG = "C:\\Users\\NIVEDHA\\.kube\\config"
     }
 
     parameters {
@@ -43,7 +45,6 @@ pipeline {
                     bat "\"${env.TOOL_PATH}\\docker.exe\" run -d -p 8089:80 --name audit_instance ${params.HUB_REPO}:${params.VERSION_TAG}"
                     
                     echo "Waiting 5 seconds for application spin-up..."
-                    // Replaced hanging 'timeout' with background-safe PowerShell sleep
                     bat "powershell -Command \"Start-Sleep -Seconds 5\""
                     
                     echo "Asset compliance validated. Dropping test instance..."
