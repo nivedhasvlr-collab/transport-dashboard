@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Pointing Jenkins explicitly to your personal AppData installation location
         TOOL_PATH = "C:\\Users\\NIVEDHA\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin"
     }
 
@@ -43,7 +42,9 @@ pipeline {
                     echo "Instantiating transient system verification node..."
                     bat "\"${env.TOOL_PATH}\\docker.exe\" run -d -p 8089:80 --name audit_instance ${params.HUB_REPO}:${params.VERSION_TAG}"
                     
-                    bat "timeout /t 5 /nobreak"
+                    echo "Waiting 5 seconds for application spin-up..."
+                    // Replaced hanging 'timeout' with background-safe PowerShell sleep
+                    bat "powershell -Command \"Start-Sleep -Seconds 5\""
                     
                     echo "Asset compliance validated. Dropping test instance..."
                     bat "\"${env.TOOL_PATH}\\docker.exe\" stop audit_instance"
