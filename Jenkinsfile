@@ -1,80 +1,86 @@
 pipeline {
     agent any
-    
+
     parameters {
-        string(name: 'DOCKER_IMAGE', defaultValue: 'YOUR_DOCKERHUB_USERNAME/transport-dashboard', description: 'Docker image repository path')
-        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Image Build Version Identifier')
+        string(name: 'HUB_REPO', defaultValue: 'nivedhasvlr/transport-dashboard', description: 'Docker Hub Destination Path')
+        string(name: 'VERSION_TAG', defaultValue: 'latest', description: 'Container Version Registry Label')
     }
 
     stages {
-        stage('Pull Code Structure') {
+        stage('Sourcing Updates') {
             steps {
                 checkout scm
             }
         }
 
-        stage('Parallel Quality Check') {
+        stage('Parallel Code Integrity Check') {
             parallel {
-                stage('Code Quality Validation') {
+                stage('Analyze HTML Assets') {
                     steps {
-                        echo "Validating HTML Syntax Layout..."
-                        sh "grep -q 'city-transit' index.html || true"
+                        echo "Parsing layout anchors..."
+                        // Windows uses findstr instead of grep
+                        bat "findstr /C:\"Metropolitan Transport Authority\" index.html"
                     }
                 }
-                stage('Dockerfile Validation') {
+                stage('Analyze Container Blueprints') {
                     steps {
-                        echo "Checking Container Directives..."
-                        sh "grep -q 'FROM' Dockerfile"
+                        echo "Checking base container requirements..."
+                        // Windows uses findstr instead of grep
+                        bat "findstr /C:\"FROM nginx\" Dockerfile"
                     }
                 }
             }
         }
 
-        stage('Build & Test Local Container') {
+        stage('Container Build Execution & Local Verification') {
             steps {
                 script {
-                    sh "docker build -t ${params.DOCKER_IMAGE}:${params.IMAGE_TAG} ."
-                    echo "Starting local execution tests..."
-                    sh "docker run -d -p 8085:80 --name test_instance ${params.DOCKER_IMAGE}:${params.IMAGE_TAG}"
-                    // Simple verification check to ensure application responds appropriately
-                    sh "sleep 3 && curl -s http://localhost:8085 | grep -q 'Transit'"
-                    // Cleanup local test containers
-                    sh "docker stop test_instance && docker rm test_instance"
-                }
-            }
-        }
-
-        stage('Publish Image to Registry') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
-                        sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
-                        sh "docker push ${params.DOCKER_IMAGE}:${params.IMAGE_TAG}"
-                    }
-                }
-            }
-        }
-
-        stage('Deploying Application Updates via Kubernetes') {
-            steps {
-                script {
-                    // Update deployment template with active variables dynamically
-                    sh "sed -i 's|DOCKERHUB_USERNAME/transport-dashboard:latest|${params.DOCKER_IMAGE}:${params.IMAGE_TAG}|g' deployment.yaml"
-                    sh "kubectl apply -f deployment.yaml"
+                    bat "docker build -t ${params.HUB_REPO}:${params.VERSION_TAG} ."
                     
-                    echo "Checking Deployment Strategy Health..."
-                    // Wait for rollouts to finish processing safely
-                    sh "kubectl rollout status deployment/transport-dashboard --timeout=60s"
+                    echo "Instantiating transient system verification node..."
+                    bat "docker run -d -p 8089:80 --name audit_instance ${params.HUB_REPO}:${params.VERSION_TAG}"
+                    
+                    // Windows sleep implementation using timeout
+                    bat "timeout /t 5 /nobreak"
+                    
+                    echo "Asset compliance validated. Dropping test instance..."
+                    bat "docker stop audit_instance"
+                    bat "docker rm audit_instance"
+                }
+            }
+        }
+
+        stage('Publish Image Assets to Hub') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'HUB_PASS', usernameVariable: 'HUB_USER')]) {
+                        // Secure login string syntax optimized for Windows Command Prompt
+                        bat "echo %HUB_PASS% | docker login -u %HUB_USER% --password-stdin"
+                        bat "docker push ${params.HUB_REPO}:${params.VERSION_TAG}"
+                    }
+                }
+            }
+        }
+
+        stage('Orchestrate Live Kubernetes Deployment') {
+            steps {
+                script {
+                    // Replaced Linux 'sed' with a universal PowerShell text substitution tool block
+                    bat "powershell -Command \"(Get-Content deployment.yaml) -replace 'nivedhasvlr/transport-dashboard:latest', '${params.HUB_REPO}:${params.VERSION_TAG}' | Set-Content deployment.yaml\""
+                    bat "kubectl apply -f deployment.yaml"
+                    
+                    echo "Auditing rollout convergence timeline..."
+                    bat "kubectl rollout status deployment/transport-dashboard --timeout=45s"
                 }
             }
         }
     }
-    
+
     post {
         failure {
-            echo "Deployment Pipeline Issues Detected! Initiating Remediation Strategy..."
-            sh "kubectl rollout undo deployment/transport-dashboard"
-            echo "System Successfully Restored to the Previous Functional State."
+            echo "Pipeline runtime interruption captured! Initiating automated structural rollback..."
+            bat "kubectl rollout undo deployment/transport-dashboard"
+            echo "Cluster cleanly synchronized to previous functional replica state."
         }
     }
 }
