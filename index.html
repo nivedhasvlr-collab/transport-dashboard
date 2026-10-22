@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Public Transport Monitoring Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f9; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1, h2 { color: #333; }
+        .bus-card { border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .status-low { color: green; font-weight: bold; }
+        .status-moderate { color: orange; font-weight: bold; }
+        .status-high { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚍 Public Transport Monitoring Dashboard</h1>
+        <h2>Current Bus Status</h2>
+        <div id="bus-list"></div>
+    </div>
+    <script>
+        const busData = [
+            { route: "101", source: "Station A", destination: "Station B", eta: "5 mins", crowd: "Low", status: "On Time" },
+            { route: "102", source: "Station C", destination: "Station D", eta: "15 mins", crowd: "High", status: "Delayed" }
+        ];
+        function displayBuses(data) {
+            const list = document.getElementById('bus-list');
+            list.innerHTML = '';
+            data.forEach(bus => {
+                list.innerHTML += `
+                    <div class="bus-card">
+                        <h3>Route ${bus.route} (${bus.status})</h3>
+                        <p><strong>From:</strong> ${bus.source} | <strong>To:</strong> ${bus.destination}</p>
+                        <p><strong>ETA:</strong> ${bus.eta} | <strong>Crowd Level:</strong> <span class="status-${bus.crowd.toLowerCase()}">${bus.crowd}</span></p>
+                    </div>
+                `;
+            });
+        }
+        displayBuses(busData);
+    </script>
+</body>
+</html>
